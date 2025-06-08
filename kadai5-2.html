@@ -4,17 +4,41 @@
     <title>演習課題5-2：外部APIの呼び出しテスト</title>
 </head>
 <body>
-    <h1 id="msg">何かのAPI</h1>
+    <h1 id="msg">猫画像API</h1>
     <form name="apiform"><p>
-        何かのフォーム：<input type="text" name="form_data">
+        猫の品種（例: bengal, 空欄でランダム）：<input type="text" name="form_data" placeholder="例: bengal">
         <button type="button" id="btn1" onclick="some_api(this.form)">実行</button>
     </p></form>
     
     <div id="result"></div>
     <script>
         async function some_api(myForm) {
-            // ここにコードを書く
-            document.getElementById("result").innerHTML += myForm.form_data.value+"<br />";
+            const breed = myForm.form_data.value;
+            const endpoint = breed 
+                ? `https://api.thecatapi.com/v1/images/search?breed_ids=${breed}`
+                : `https://api.thecatapi.com/v1/images/search`;
+
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error(`HTTPエラー: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // 結果の処理
+                if (data && data.length > 0) {
+                    const cat = data[0];
+                    const breedName = cat.breeds && cat.breeds.length > 0 ? cat.breeds[0].name : 'ランダムな猫';
+                    document.getElementById("result").innerHTML = `
+                        <p>品種: ${breedName}</p>
+                        <img src="${cat.url}" alt="猫の画像" style="max-width: 300px;">
+                    `;
+                } else {
+                    document.getElementById("result").innerHTML = '猫画像が見つかりませんでした。';
+                }
+            } catch (error) {
+                document.getElementById("result").innerHTML = `エラーが発生しました: ${error.message}`;
+            }
             document.apiform.reset();
         }
     </script>
